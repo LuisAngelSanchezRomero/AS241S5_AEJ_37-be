@@ -1,0 +1,38 @@
+server:
+  port: 8082
+
+spring:
+  r2dbc:
+    url: r2dbc:postgresql://ep-silent-dust-an4c7hgf-pooler.c-6.us-east-1.aws.neon.tech/luis_sanchez_37?sslmode=require&channel_binding=require
+    username: neondb_owner
+    password: npg_JLYBxOZ9Qq7i
+    pool:
+      enabled: true
+      initial-size: 1
+      max-size: 5
+      max-idle-time: 10m
+      validation-query: SELECT 1
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+
+# Credenciales de APIs de Inteligencia Artificial
+ai:
+  imagga:
+    url: https://api.imagga.com/v2/tags
+    api-key: acc_30b1620d956c9d7
+    api-secret: cf726b8c8bafdbda1c26f92fd83e1efa
+  glm:
+    url: https://openrouter.ai/api/v1/chat/completions
+    api-key: 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
+    model: z-ai/glm-4.5-air:free
