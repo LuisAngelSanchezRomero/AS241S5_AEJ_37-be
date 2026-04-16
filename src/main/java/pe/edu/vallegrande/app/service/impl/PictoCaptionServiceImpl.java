@@ -1,5 +1,7 @@
 package pe.edu.vallegrande.app.service.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -11,13 +13,16 @@ import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 
 @Slf4j
 @Service
 public class PictoCaptionServiceImpl {
 
     private final AiResultRepository aiResultRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${ai.imagga.url}")
     private String apiUrl;
@@ -36,7 +41,6 @@ public class PictoCaptionServiceImpl {
     public Mono<AiResult> describeImage(String imageUrl) {
         log.info("Consultando Imagga con imagen: {}", imageUrl);
 
-        // Imagga usa Basic Auth con api-key:api-secret en Base64
         String credentials = Base64.getEncoder()
                 .encodeToString((apiKey + ":" + apiSecret).getBytes(StandardCharsets.UTF_8));
 
@@ -51,13 +55,33 @@ public class PictoCaptionServiceImpl {
                                 .flatMap(err -> Mono.error(new RuntimeException("Imagga error: " + err))))
                 .bodyToMono(String.class)
                 .flatMap(response -> {
+                    String formatted = extractAndFormatTags(response); // Extrae y formatea los tags antes de guardar
                     AiResult record = new AiResult();
                     record.setApiName("Imagga");
                     record.setInputData(imageUrl);
-                    record.setResult(response);
+                    record.setResult(formatted);
                     record.setCreatedAt(LocalDateTime.now());
                     return aiResultRepository.save(record);
                 });
+    }
+
+    private String extractAndFormatTags(String rawJson) {
+        try {
+            JsonNode root = objectMapper.readTree(rawJson);
+            JsonNode tags = root.path("result").path("tags");
+
+            List<String> lines = new ArrayList<>();
+            for (JsonNode tag : tags) {
+                String en = tag.path("tag").path("en").asText();
+                double confidence = tag.path("confidence").asDouble();
+                lines.add(en + " (" + String.format("%.1f", confidence) + "%)");
+            }
+
+            return String.join(", ", lines);
+        } catch (Exception e) {
+            log.warn("No se pudo parsear respuesta de Imagga, guardando raw: {}", e.getMessage());
+            return rawJson;
+        }
     }
 
     // Retorna todos los resultados guardados de Imagga

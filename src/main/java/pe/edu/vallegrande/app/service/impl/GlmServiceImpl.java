@@ -1,5 +1,7 @@
 package pe.edu.vallegrande.app.service.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ import java.util.Map;
 public class GlmServiceImpl {
 
     private final AiResultRepository aiResultRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${ai.glm.url}")
     private String apiUrl;
@@ -45,7 +48,7 @@ public class GlmServiceImpl {
         );
 
         // Se crea el WebClient aquí para que los @Value ya estén inyectados
-        // Timeout de 60s porque los modelos free de OpenRouter pueden tardar
+        // Tiempo de 60s
         HttpClient httpClient = HttpClient.create()
                 .responseTimeout(Duration.ofSeconds(60));
 
@@ -64,13 +67,25 @@ public class GlmServiceImpl {
                                 .flatMap(err -> Mono.error(new RuntimeException("OpenRouter error: " + err))))
                 .bodyToMono(String.class)
                 .flatMap(response -> {
+                    String content = extractContent(response); // Extrae solo el texto de la respuesta antes de guardar
                     AiResult record = new AiResult();
                     record.setApiName("GLM");
                     record.setInputData(prompt);
-                    record.setResult(response);
+                    record.setResult(content);
                     record.setCreatedAt(LocalDateTime.now());
                     return aiResultRepository.save(record);
                 });
+    }
+
+    // Extrae el campo content del primer choice de la respuesta de OpenRouter
+    private String extractContent(String rawJson) {
+        try {
+            JsonNode root = objectMapper.readTree(rawJson);
+            return root.path("choices").get(0).path("message").path("content").asText(); // Navega: choices[0].message.content
+        } catch (Exception e) {
+            log.warn("No se pudo parsear respuesta de GLM, guardando raw: {}", e.getMessage());
+            return rawJson;
+        }
     }
 
     // Retorna todos los resultados guardados de GLM

@@ -34,5 +34,5 @@ ai:
     api-secret: cf726b8c8bafdbda1c26f92fd83e1efa
   glm:
     url: https://openrouter.ai/api/v1/chat/completions
-    api-key: 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
+    api-key: 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
     model: z-ai/glm-4.5-air:free
