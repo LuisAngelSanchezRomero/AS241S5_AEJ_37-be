@@ -88,8 +88,100 @@ public class GlmServiceImpl {
         }
     }
 
-    // Retorna todos los resultados guardados de GLM
+    // Retorna todos los resultados guardados de GLM (solo activos)
     public Flux<AiResult> getHistory() {
-        return aiResultRepository.findByApiName("GLM");
+        return aiResultRepository.findByApiName("GLM")
+                .filter(record -> "Activo".equals(record.getActive()));
+    }
+
+    // Actualiza una consulta existente y vuelve a consultar la API
+    public Mono<AiResult> updateAndReconsult(Long id, String newPrompt) {
+        log.info("Actualizando y re-consultando GLM ID: {} con nuevo prompt: {}", id, newPrompt);
+        
+        return aiResultRepository.findById(id)
+            .filter(record -> "Activo".equals(record.getActive()) && "GLM".equals(record.getApiName()))
+            .switchIfEmpty(Mono.error(new RuntimeException("Registro no encontrado o inactivo")))
+            .flatMap(existingRecord -> {
+                // Hacer nueva consulta a GLM API
+                return consultGlmApi(newPrompt)
+                    .flatMap(newResult -> {
+                        // Actualizar TODOS los campos
+                        existingRecord.setInputData(newPrompt);
+                        existingRecord.setResult(newResult);
+                        existingRecord.setCreatedAt(LocalDateTime.now());
+                        return aiResultRepository.save(existingRecord);
+                    });
+            });
+    }
+
+    // Borrado lógico de un registro
+    public Mono<AiResult> deleteRecord(Long id) {
+        log.info("Eliminando (borrado lógico) registro GLM ID: {}", id);
+        
+        return aiResultRepository.findById(id)
+            .filter(record -> "Activo".equals(record.getActive()) && "GLM".equals(record.getApiName()))
+            .switchIfEmpty(Mono.error(new RuntimeException("Registro no encontrado o ya eliminado")))
+            .flatMap(record -> {
+                record.setActive("Inactivo");
+                return aiResultRepository.save(record);
+            });
+    }
+
+    // Restaurar un registro eliminado
+    public Mono<AiResult> restoreRecord(Long id) {
+        log.info("Restaurando registro GLM ID: {}", id);
+        
+        return aiResultRepository.findById(id)
+            .filter(record -> "Inactivo".equals(record.getActive()) && "GLM".equals(record.getApiName()))
+            .switchIfEmpty(Mono.error(new RuntimeException("Registro no encontrado o no está eliminado")))
+            .flatMap(record -> {
+                record.setActive("Activo");
+                return aiResultRepository.save(record);
+            });
+    }
+
+    // Obtener historial de registros eliminados
+    public Flux<AiResult> getDeletedHistory() {
+        return aiResultRepository.findByApiName("GLM")
+                .filter(record -> "Inactivo".equals(record.getActive()));
+    }
+
+    // Método auxiliar para separar la lógica de consulta API
+    private Mono<String> consultGlmApi(String prompt) {
+        Map<String, Object> body = Map.of(
+                "model", model,
+                "messages", List.of(Map.of("role", "user", "content", prompt))
+        );
+
+        HttpClient httpClient = HttpClient.create()
+                .responseTimeout(Duration.ofSeconds(60));
+
+        return WebClient.builder()
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build()
+                .post()
+                .uri(apiUrl)
+                .header("Authorization", "Bearer " + apiKey)
+                .header("Content-Type", "application/json")
+                .bodyValue(body)
+                .retrieve()
+                .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                        res -> res.bodyToMono(String.class)
+                                .doOnNext(err -> {
+                                    if (res.statusCode().value() == 429) {
+                                        log.error("Rate limit alcanzado en OpenRouter: {}", err);
+                                    } else {
+                                        log.error("Error de OpenRouter: {}", err);
+                                    }
+                                })
+                                .flatMap(err -> {
+                                    if (res.statusCode().value() == 429) {
+                                        return Mono.error(new RuntimeException("Rate limit alcanzado. Intente nuevamente en unos minutos."));
+                                    } else {
+                                        return Mono.error(new RuntimeException("OpenRouter error: " + err));
+                                    }
+                                }))
+                .bodyToMono(String.class)
+                .map(this::extractContent); // Solo extrae el contenido, no guarda
     }
 }

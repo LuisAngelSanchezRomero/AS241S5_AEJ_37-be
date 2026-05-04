@@ -29,4 +29,28 @@ public class PictoCaptionRest {
     public Flux<AiResult> history() {
         return service.getHistory();
     }
+
+    // Actualiza una consulta existente y vuelve a consultar la API
+    @PutMapping("/{id}")
+    public Mono<AiResult> updateImage(@PathVariable Long id, @RequestBody ImageRequest body) {
+        return service.updateAndReconsult(id, body.getImageUrl());
+    }
+
+    // Borrado lógico de una consulta
+    @DeleteMapping("/{id}")
+    public Mono<AiResult> deleteImage(@PathVariable Long id) {
+        return service.deleteRecord(id);
+    }
+
+    // Restaurar una consulta eliminada
+    @PatchMapping("/{id}/restore")
+    public Mono<AiResult> restoreImage(@PathVariable Long id) {
+        return service.restoreRecord(id);
+    }
+
+    // Obtener análisis eliminados
+    @GetMapping("/deleted")
+    public Flux<AiResult> getDeletedImages() {
+        return service.getDeletedHistory();
+    }
 }

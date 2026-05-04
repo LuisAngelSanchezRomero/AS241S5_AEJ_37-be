@@ -29,4 +29,28 @@ public class GlmRest {
     public Flux<AiResult> history() {
         return service.getHistory();
     }
+
+    // Actualiza una consulta existente y vuelve a consultar la API
+    @PutMapping("/{id}")
+    public Mono<AiResult> updateChat(@PathVariable Long id, @RequestBody ChatRequest body) {
+        return service.updateAndReconsult(id, body.getPrompt());
+    }
+
+    // Borrado lógico de una consulta
+    @DeleteMapping("/{id}")
+    public Mono<AiResult> deleteChat(@PathVariable Long id) {
+        return service.deleteRecord(id);
+    }
+
+    // Restaurar una consulta eliminada
+    @PatchMapping("/{id}/restore")
+    public Mono<AiResult> restoreChat(@PathVariable Long id) {
+        return service.restoreRecord(id);
+    }
+
+    // Obtener conversaciones eliminadas
+    @GetMapping("/deleted")
+    public Flux<AiResult> getDeletedChats() {
+        return service.getDeletedHistory();
+    }
 }

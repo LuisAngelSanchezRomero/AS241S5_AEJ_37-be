@@ -4,5 +4,6 @@ CREATE TABLE IF NOT EXISTS ai_result (
     api_name VARCHAR(50) NOT NULL,
     input_data TEXT NOT NULL,
     result TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    active VARCHAR(10) DEFAULT 'Activo'
 );

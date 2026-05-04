@@ -84,8 +84,79 @@ public class PictoCaptionServiceImpl {
         }
     }
 
-    // Retorna todos los resultados guardados de Imagga
+    // Retorna todos los resultados guardados de Imagga (solo activos)
     public Flux<AiResult> getHistory() {
-        return aiResultRepository.findByApiName("Imagga");
+        return aiResultRepository.findByApiName("Imagga")
+                .filter(record -> "Activo".equals(record.getActive()));
+    }
+
+    // Actualiza una consulta existente y vuelve a consultar la API
+    public Mono<AiResult> updateAndReconsult(Long id, String newImageUrl) {
+        log.info("Actualizando y re-consultando Imagga ID: {} con nueva URL: {}", id, newImageUrl);
+        
+        return aiResultRepository.findById(id)
+            .filter(record -> "Activo".equals(record.getActive()) && "Imagga".equals(record.getApiName()))
+            .switchIfEmpty(Mono.error(new RuntimeException("Registro no encontrado o inactivo")))
+            .flatMap(existingRecord -> {
+                // Hacer nueva consulta a Imagga API
+                return consultImaggaApi(newImageUrl)
+                    .flatMap(newResult -> {
+                        // Actualizar TODOS los campos
+                        existingRecord.setInputData(newImageUrl);
+                        existingRecord.setResult(newResult);
+                        existingRecord.setCreatedAt(LocalDateTime.now());
+                        return aiResultRepository.save(existingRecord);
+                    });
+            });
+    }
+
+    // Borrado lógico de un registro
+    public Mono<AiResult> deleteRecord(Long id) {
+        log.info("Eliminando (borrado lógico) registro Imagga ID: {}", id);
+        
+        return aiResultRepository.findById(id)
+            .filter(record -> "Activo".equals(record.getActive()) && "Imagga".equals(record.getApiName()))
+            .switchIfEmpty(Mono.error(new RuntimeException("Registro no encontrado o ya eliminado")))
+            .flatMap(record -> {
+                record.setActive("Inactivo");
+                return aiResultRepository.save(record);
+            });
+    }
+
+    // Restaurar un registro eliminado
+    public Mono<AiResult> restoreRecord(Long id) {
+        log.info("Restaurando registro Imagga ID: {}", id);
+        
+        return aiResultRepository.findById(id)
+            .filter(record -> "Inactivo".equals(record.getActive()) && "Imagga".equals(record.getApiName()))
+            .switchIfEmpty(Mono.error(new RuntimeException("Registro no encontrado o no está eliminado")))
+            .flatMap(record -> {
+                record.setActive("Activo");
+                return aiResultRepository.save(record);
+            });
+    }
+
+    // Obtener historial de registros eliminados
+    public Flux<AiResult> getDeletedHistory() {
+        return aiResultRepository.findByApiName("Imagga")
+                .filter(record -> "Inactivo".equals(record.getActive()));
+    }
+
+    // Método auxiliar para separar la lógica de consulta API
+    private Mono<String> consultImaggaApi(String imageUrl) {
+        String credentials = Base64.getEncoder()
+                .encodeToString((apiKey + ":" + apiSecret).getBytes(StandardCharsets.UTF_8));
+
+        return WebClient.builder().build()
+                .get()
+                .uri(apiUrl + "?image_url=" + imageUrl)
+                .header("Authorization", "Basic " + credentials)
+                .retrieve()
+                .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                        res -> res.bodyToMono(String.class)
+                                .doOnNext(err -> log.error("Error de Imagga: {}", err))
+                                .flatMap(err -> Mono.error(new RuntimeException("Imagga error: " + err))))
+                .bodyToMono(String.class)
+                .map(this::extractAndFormatTags); // Solo extrae y formatea, no guarda
     }
 }

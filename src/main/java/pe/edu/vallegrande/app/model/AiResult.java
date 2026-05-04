@@ -25,4 +25,7 @@ public class AiResult {
 
     @Column("created_at")
     private LocalDateTime createdAt;
+
+    @Column("active")
+    private String active = "Activo";
 }

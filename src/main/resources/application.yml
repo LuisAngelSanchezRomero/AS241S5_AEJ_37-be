@@ -30,9 +30,9 @@ springdoc:
 ai:
   imagga:
     url: https://api.imagga.com/v2/tags
-    api-key: acc_30b1620d956c9d7
-    api-secret: cf726b8c8bafdbda1c26f92fd83e1efa
+    api-key: ${IMAGGA_API_KEY}
+    api-secret: ${IMAGGA_API_SECRET}
   glm:
     url: https://openrouter.ai/api/v1/chat/completions
-    api-key: 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
+    api-key: ${OPENROUTER_API_KEY}
     model: z-ai/glm-4.5-air:free
