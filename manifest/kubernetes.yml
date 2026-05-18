@@ -1,0 +1,50 @@
+# MINIKUBE FUNCIONA EN CODESPACE | LOCAL
+# KUBECTL FUNCIONA DIRECTO EN KILLERCODA (SIN MINIKUBE)
+
+# consultar versión de minikube
+minikube version
+
+# consultar si minikube esta en start o stop
+minikube status
+
+# iniciar clúster kubernetes
+minikube start
+
+# ingresar a la carpeta de los manifiestos de kubernetes (manifest)
+cd manifest
+
+# listar namespace
+kubectl get namespace
+kubectl get ns
+
+# crear un namespace "luis-sanchez-37" por comando mediante un archivo: "luis-sanchez-37-namespace.yml"
+kubectl apply -f luis-sanchez-37-namespace.yml
+
+# consultar namespace en uso por "default" | LINUX
+kubectl config view --minify | grep namespace
+
+# consultar namespace en uso por "default" | WINDOWS
+kubectl config view --minify | findstr namespace
+
+# cambiar un namespace en uso por "default" a "luis-sanchez-37-namespace"
+kubectl config set-context --current --namespace=luis-sanchez-37-namespace
+
+# consultar todos los recursos de un namespace "luis-sanchez-37-namespace"
+kubectl get all -n luis-sanchez-37-namespace
+
+# consultar todos los recursos y secret de un namespace "luis-sanchez-37-namespace"
+kubectl get all,secrets -n luis-sanchez-37-namespace
+
+
+# listar services del namespace "luis-sanchez-37-namespace"
+minikube service luis-sanchez-37-service -n luis-sanchez-37-namespace
+minikube service list
+
+# probar el microservicio dentro del clúster con curl
+curl http://192.168.49.2:30001/v1/api/age-detector
+curl http://192.168.49.2:30001/v1/api/age-detector/1
+
+# crear un túnel de puerto la máquina local (host) y el clúster de Kubernetes
+kubectl port-forward service/luis-sanchez-37-service 8082:30001
+
+

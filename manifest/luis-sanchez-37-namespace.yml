@@ -1,0 +1,6 @@
+# kubectl create namespace luis-sanchez-37-namespace (COMANDO)
+# kubectl apply -f luis-sanchez-37-namespace.yml (yml)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: luis-sanchez-37-namespace

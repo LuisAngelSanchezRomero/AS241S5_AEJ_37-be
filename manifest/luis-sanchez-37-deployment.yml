@@ -1,0 +1,23 @@
+# kubectl apply -f luis-sanchez-37-deployment.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: luis-sanchez-37-deployment
+  namespace: luis-sanchez-37-namespace
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: luis-sanchez-37-deployment        # Debe coincidir con las etiquetas del Service
+  template:
+    metadata:
+      labels:
+        app: luis-sanchez-37-deployment      # Debe coincidir con las etiquetas del Service
+    spec:
+      containers:
+      - name: luis-sanchez-37-container
+        image: 50luisangelsanchezromero/ms-spring-webflux-r2dbc-sql:1.0   # Tu imagen Docker Hub
+        imagePullPolicy: Always        # Siempre descargar la última versión
+        envFrom:
+        - secretRef:
+            name: luis-sanchez-37-secret  # Esto cargará todos los valores como variables de entorno
