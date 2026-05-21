@@ -3,9 +3,9 @@ server:
 
 spring:
   r2dbc:
-    url: ${SPRING_R2DBC_URL}
-    username: ${SPRING_R2DBC_USERNAME}
-    password: ${SPRING_R2DBC_PASSWORD}
+    url: ${SPRING_R2DBC_URL:r2dbc:postgresql://ep-silent-dust-an4c7hgf-pooler.c-6.us-east-1.aws.neon.tech/luis_sanchez_37?sslmode=require&channel_binding=require}
+    username: ${SPRING_R2DBC_USERNAME:neondb_owner}
+    password: ${SPRING_R2DBC_PASSWORD:npg_JLYBxOZ9Qq7i}
     pool:
       enabled: true
       initial-size: 1
