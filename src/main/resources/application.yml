@@ -1,11 +1,11 @@
 server:
-  port: 8082
+  port: ${SERVER_PORT:8082}
 
 spring:
   r2dbc:
-    url: r2dbc:postgresql://ep-silent-dust-an4c7hgf-pooler.c-6.us-east-1.aws.neon.tech/luis_sanchez_37?sslmode=require&channel_binding=require
-    username: neondb_owner
-    password: npg_JLYBxOZ9Qq7i
+    url: ${SPRING_R2DBC_URL}
+    username: ${SPRING_R2DBC_USERNAME}
+    password: ${SPRING_R2DBC_PASSWORD}
     pool:
       enabled: true
       initial-size: 1
