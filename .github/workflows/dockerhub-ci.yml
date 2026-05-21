@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - develop
-      - webflux-sql
+      - webflux-sq
   pull_request:
     branches:
       - develop
-      - webflux-sql
+      - webflux-sq
   schedule:
     # Ejecutar todos los días a las 8:00 AM hora Perú (UTC-5) → 1:00 PM UTC
     - cron: '0 13 * * *'
