@@ -53,4 +53,18 @@ public class GlmRest {
     public Flux<AiResult> getDeletedChats() {
         return service.getDeletedHistory();
     }
+
+    // Ejemplo de consulta vulnerable para forzar la alerta de CodeQL
+    @GetMapping("/vulnerable/{inputId}")
+    public void queryUser(@PathVariable String inputId) {
+        try {
+            java.sql.Connection conn = java.sql.DriverManager.getConnection("jdbc:mysql://localhost/db", "user", "pass");
+            java.sql.Statement stmt = conn.createStatement();
+            // ESTO PROVOCA UNA INYECCIÓN SQL (CWE-89)
+            String query = "SELECT * FROM users WHERE id = '" + inputId + "'";
+            java.sql.ResultSet rs = stmt.executeQuery(query);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
