@@ -1,0 +1,62 @@
+name: CodeQL Analysis
+
+# =========================================================
+# EVENTOS QUE DISPARAN EL PIPELINE
+# =========================================================
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  analyze:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+
+    # =========================================================
+    # PERMISOS NECESARIOS PARA CODEQL
+    # =========================================================
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    # =========================================================
+    # ESTRATEGIA DE MATRIZ PARA MÚLTIPLES LENGUAJES
+    # =========================================================
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['java']
+
+    steps:
+      # =========================================================
+      # OBTENER EL CÓDIGO DEL REPOSITORIO
+      # =========================================================
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # =========================================================
+      # INICIALIZAR CODEQL
+      # =========================================================
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+
+      # =========================================================
+      # AUTOBUILD
+      # =========================================================
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      # =========================================================
+      # EJECUTAR ANÁLISIS DE CODEQL
+      # =========================================================
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
