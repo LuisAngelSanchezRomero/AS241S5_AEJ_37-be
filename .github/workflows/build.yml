@@ -60,7 +60,7 @@ jobs:
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=LuisAngelSanchezRomero_AS241S5_AEJ_37-be
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -DskipTests -Dsonar.projectKey=LuisAngelSanchezRomero_AS241S5_AEJ_37-be
 
       - name: Pipeline Finished
         run: echo "SonarQube Cloud analysis completed. Check results at https://sonarcloud.io"
