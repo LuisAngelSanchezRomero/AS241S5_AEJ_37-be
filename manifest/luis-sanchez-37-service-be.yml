@@ -1,9 +1,9 @@
-# kubectl apply -f luis-sanchez-37-service.yml
+# kubectl apply -f luis-sanchez-37-service-be.yml
 apiVersion: v1
 kind: Service
 metadata:
-  name: luis-sanchez-37-service
-  namespace: luis-sanchez-37-namespace
+  name: luis-sanchez-37-service-be
+  namespace: luis-sanchez-37-namespace-be
 spec:
   type: NodePort      #30000-32767  # Cambia a LoadBalancer si estás en un entorno de nube
   ports:
@@ -11,4 +11,4 @@ spec:
     targetPort: 8082  # Puerto en el contenedor donde tu aplicación escucha
     nodePort: 30001   # Puerto asignado en el nodo, opcional
   selector:
-    app: luis-sanchez-37-deployment  # Debe coincidir con las etiquetas del Deployment
+    app: luis-sanchez-37-deployment-be  # Debe coincidir con las etiquetas del Deployment
